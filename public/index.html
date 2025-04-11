@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Customer Support Chat</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .chat-container {
+      width: 400px;
+      height: 600px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .message {
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      max-width: 80%;
+      word-wrap: break-word;
+      display: flex;
+      flex-direction: column;
+      font-size: 14px;
+    }
+    .user {
+      background-color: #dcf8c6;
+      align-self: flex-end;
+      text-align: right;
+    }
+    .agent {
+      background-color: #f1f0f0;
+      align-self: flex-start;
+      text-align: left;
+    }
+    .sender {
+      font-weight: bold;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: #555;
+    }
+    .timestamp {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #888;
+    }
+    .input-container {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+    input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      outline: none;
+    }
+    button {
+      padding: 12px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-messages" id="messages"></div>
+    <div class="input-container">
+      <input id="messageInput" placeholder="Type your message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const messagesDiv = document.getElementById('messages');
+    const input = document.getElementById('messageInput');
+
+    function appendMessage(sender, message) {
+      const msgDiv = document.createElement('div');
+      msgDiv.classList.add('message', sender === 'User' ? 'user' : 'agent');
+
+      const senderDiv = document.createElement('div');
+      senderDiv.classList.add('sender');
+      senderDiv.textContent = sender;
+
+      const textDiv = document.createElement('div');
+      textDiv.textContent = message;
+
+      const timestampDiv = document.createElement('div');
+      timestampDiv.classList.add('timestamp');
+      const now = new Date();
+      timestampDiv.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      msgDiv.appendChild(senderDiv);
+      msgDiv.appendChild(textDiv);
+      msgDiv.appendChild(timestampDiv);
+
+      messagesDiv.appendChild(msgDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function sendMessage() {
+      const message = input.value;
+      if (!message) return;
+      socket.emit('send_message', {
+        sender: 'User',
+        receiver: 'Agent',
+        message,
+      });
+      input.value = '';
+    }
+
+    socket.on('receive_message', (data) => {
+      appendMessage(data.sender, data.message);
+    });
+  </script>
+</body>
+</html>
